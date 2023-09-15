@@ -1,0 +1,139 @@
+#version 450
+
+#define loop(i,x) for(int i = 0; i < x; i++)
+#define range(i,a,b) for(int i = a; i <= b; i++)
+
+#define fluid_rho 0.5
+
+#define dt 0.5
+
+
+struct particle {
+
+	vec3 position;
+	float mass;
+	vec3 velocity;
+    float extra;
+    vec4 cor;
+    
+};
+
+layout(std140, binding = 0) readonly buffer ParticleSSBOIn {
+   particle particlesIn[ ];
+};
+
+layout(std140, binding = 1) buffer ParticleSSBOOut {
+   particle particlesOut[ ];
+};
+
+layout (binding = 2) uniform SizeArray {
+    ivec3 size;
+}iResolution;
+
+layout (binding = 3) uniform Times {
+    float deltaTime;
+}time;
+
+layout (local_size_x = 11, local_size_y = 11, local_size_z = 8) in;
+
+uint getIndex(vec3 pos) {
+    
+    // Calcule o índice com base na posição (x, y, z) na matriz 3D
+    uint index = uint(pos.x + pos.y * iResolution.size.x + pos.z * iResolution.size.x * iResolution.size.y);
+
+    //index = clamp(index, 0, iResolution.size.x * iResolution.size.y * iResolution.size.z - 1);
+    
+    return index;
+}
+
+particle getParticle(vec3 pos)
+{
+	particle P = particlesIn[getIndex(pos)];;
+	
+	//P.position += pos;
+	return P;
+}
+
+void saveParticle(particle P, vec3 pos)
+{
+	
+	P.position +=  clamp(P.position - pos, vec3(-0.5), vec3(0.5));
+	
+	particlesOut[getIndex(pos)] = P;
+}
+
+float waterDiffusionRadius(float massa){
+    float difR = 1.0;
+    return difR;
+}
+
+vec4 distribution(vec3 x, vec3 p, float K)
+{
+    vec3 omin = clamp(x - K*0.5, p - 0.5, p + 0.5);
+    vec3 omax = clamp(x + K*0.5, p - 0.5, p + 0.5); 
+    float volume = (omax.x - omin.x) * (omax.y - omin.y) * (omax.z - omin.z) / (K * K * K);
+    return vec4(0.5*(omin + omax), volume);
+}
+
+
+void Reintegration(inout particle P, vec3 pos)
+{
+	//basically integral over all updated neighbor distributions
+    //that fall inside of this pixel
+    //this makes the tracking conservative
+
+    
+    for(int i = -1; i <= 1; i++)
+    for(int j = -1; j <= 1; j++)
+    for(int k = -1; k <= 1; k++)
+    {
+        vec3 tpos = vec3(pos) + vec3(i,j,k);
+
+        particle P0 = getParticle(tpos);
+        
+        //a+=vec4(tpos,getIndex(tpos));
+       
+        P0.position += P0.velocity * dt; //integrate position
+
+        float difR = waterDiffusionRadius(P0.mass);
+        vec4 D = distribution(P0.position, vec3(pos), difR);
+        
+        
+        //the deposited mass into this cell
+        float m = P0.mass*D.w;
+        
+        //add weighted by mass
+        P.position += D.xyz*m;
+        P.velocity += P0.velocity*m;
+        P.cor += P0.cor*m;
+        
+        //add mass
+        P.mass += m;
+    }
+    //normalization
+    if(P.mass != 0.)
+    {
+        P.position /= P.mass;
+        P.velocity /= P.mass;
+        P.cor /= P.mass;
+    }
+    
+}
+
+void main() 
+{
+   vec3 index = vec3(gl_GlobalInvocationID);
+   
+   particle P;
+   P.position = vec3(0.0);
+   P.velocity = vec3(0.0);
+   P.mass = 0.0;
+   P.cor = vec4(0.0);
+   
+   Reintegration(P, index);
+   
+   
+   saveParticle(P,index);
+    
+
+}

@@ -178,7 +178,7 @@ void main()
    		P.position = vec3(index);
    		P.velocity = -vec3(0.3,0.5,0.);
    		P.mass = 1.0;
-   		P.cor = vec4(0.0,0.0,0.1,0.0);
+   		P.cor = vec4(0.0,0.0,1.0,0.0);
    }
    
    if(length(vec3(index) - vec3(0.0,0.0,00.0)) < 5.){

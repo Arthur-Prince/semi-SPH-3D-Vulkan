@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static java.lang.ClassLoader.getSystemClassLoader;
@@ -17,14 +18,21 @@ import static org.lwjgl.util.shaderc.Shaderc.*;
 public class ShaderSPIRVUtils {
 
     public static SPIRV compileShaderFile(String shaderFile, ShaderKind shaderKind) {
-        return compileShaderAbsoluteFile(getSystemClassLoader().getResource(shaderFile).toExternalForm(), shaderKind);
+	Path diretorioAtual = Paths.get("");
+
+        // O método toAbsolutePath() converte o caminho relativo em absoluto
+        Path diretorioAbsoluto = diretorioAtual.toAbsolutePath();
+
+        // Converte o caminho em uma String para exibição
+        String diretorioAtualString = diretorioAbsoluto.toString();
+        return compileShaderAbsoluteFile(diretorioAtualString.concat("/src/main/resources/"+shaderFile), shaderKind);
     }
 
     public static SPIRV compileShaderAbsoluteFile(String shaderFile, ShaderKind shaderKind) {
         try {
-            String source = new String(Files.readAllBytes(Paths.get(new URI(shaderFile))));
+            String source = new String(Files.readAllBytes(Paths.get(shaderFile)));
             return compileShader(shaderFile, source, shaderKind);
-        } catch (IOException | URISyntaxException e) {
+        } catch (IOException  e) {
             e.printStackTrace();
         }
         return null;

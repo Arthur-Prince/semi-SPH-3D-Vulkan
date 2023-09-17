@@ -210,5 +210,7 @@ public class Particulas implements Destructor, LoopExecuter {
 
 	return binaryString.toString();
     }
+    
+    
 
 }

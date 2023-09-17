@@ -9,11 +9,11 @@
 
 
 	<properties>
-		
+
 		<maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <lwjgl.version>3.3.2</lwjgl.version>
-        <joml.version>1.10.5</joml.version>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<lwjgl.version>3.3.2</lwjgl.version>
+		<joml.version>1.10.5</joml.version>
 	</properties>
 
 	<build>
@@ -25,9 +25,35 @@
 					<include>textures/*</include>
 					<include>models/*</include>
 				</includes>
-				<filtering>true</filtering>
 			</resource>
 		</resources>
+
+		<finalName>SPH</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.2.4</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<transformers>
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<mainClass>main.Main</mainClass>
+								</transformer>
+							</transformers>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+
+
 	</build>
 
 	<profiles>
@@ -200,7 +226,7 @@
 			<artifactId>joml</artifactId>
 			<version>${joml.version}</version>
 		</dependency>
-		
+
 		<!-- https://mvnrepository.com/artifact/junit/junit -->
 		<dependency>
 			<groupId>junit</groupId>
